@@ -368,6 +368,7 @@
             rbOnOff.TabStop = true;
             rbOnOff.Text = "On / Off";
             rbOnOff.UseVisualStyleBackColor = true;
+            rbOnOff.CheckedChanged += rbOnOff_CheckedChanged_1;
             // 
             // label12
             // 

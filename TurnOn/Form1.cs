@@ -4,72 +4,42 @@ namespace TurnOn
 {
     public partial class Form1 : Form
     {
-       
+
         public Form1()
         {
             InitializeComponent();
-            ResetAllDevicesVisual(Color.White);
+            InicializarSistema();
+        }
+
+        private void InicializarSistema()
+        {
+            // 1. Inicializa botones de estado en Gris (OFF)
+            ResetAllDevicesVisual(Color.Gray);
+
+            // 2. Inicializa los indicadores y el RadioButton a OFF
             UpdateSystemStatus(false);
-            rbOnOff.Checked = false;
+
+            // 3. Inicializa los CheckBoxes de control a desmarcados
+            ResetAllDevicesControl(false);
+
+            // 4. Vincular eventos de CheckBox (IMPORTANTE)
+            VincularEventosCheckBox();
         }
-
-        private void label16_Click(object sender, EventArgs e)
+        private void VincularEventosCheckBox()
         {
+            // Eventos para Luces
+            chkControlLuzPrincipal.CheckedChanged += chkControlLuz_CheckedChanged;
+            chkControlLuzRecamara1.CheckedChanged += chkControlLuz_CheckedChanged;
+            chkControlLuzRecamara2.CheckedChanged += chkControlLuz_CheckedChanged;
+            chkControlLuzSala.CheckedChanged += chkControlLuz_CheckedChanged;
+            chkControlLuzCocina.CheckedChanged += chkControlLuz_CheckedChanged;
 
-        }
-        private void rbOnOff_CheckedChanged(object sender, EventArgs e)
-        {
-            bool isSystemOn = rbOnOff.Checked;
-
-            if (isSystemOn)
-            {
-                UpdateSystemStatus(true);
-                MessageBox.Show("Controladores activados. Sistema operativo (ON).", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else // Estado OFF
-            {
-                UpdateSystemStatus(false);
-                // ✅ Estas llamadas ya no generarán error CS0103 una vez se definan los métodos
-                ResetAllDevicesControl(false);
-                ResetAllDevicesVisual(Color.White);
-                MessageBox.Show("Sistema de Control en estado OFF. Dispositivos desactivados.", "Estado OFF", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-
-        // --- Manejo de Dispositivos ---
-
-        private void ToggleDeviceState(CheckBox controlCheckbox, bool isLight)
-        {
-            if (!rbOnOff.Checked)
-            {
-                MessageBox.Show("El sistema de Controladores no está activo (OFF). Active el sistema con 'On / Off' primero.", "Error de Sistema", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                controlCheckbox.Checked = false;
-                return;
-            }
-
-            // ✅ El error CS8602 (posiblemente NULL) se maneja con el 'if (deviceButton == null)'
-            Button deviceButton = GetDeviceButton(controlCheckbox, isLight);
-            if (deviceButton == null)
-            {
-                // Si deviceButton es null, significa que un CheckBox no está mapeado correctamente.
-                MessageBox.Show("Error de mapeo: el CheckBox no corresponde a un botón de estado.", "Error Interno", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                controlCheckbox.Checked = false;
-                return;
-            }
-
-            bool newState = controlCheckbox.Checked;
-            Color newColor = newState ? Color.LightGreen : Color.White;
-            string newText = newState ? "ON" : "OFF";
-            string deviceType = isLight ? "Luz" : "Clima";
-
-            // ✅ Asegúrate de que el control padre exista antes de acceder a su Text
-            string roomName = deviceButton.Parent != null ? deviceButton.Parent.Text : "Habitación Desconocida";
-
-            deviceButton.BackColor = newColor;
-            deviceButton.Text = newText;
-
-            MessageBox.Show($"{deviceType} de {roomName} ha sido: {(newState ? "ENCENDIDA" : "APAGADA")}.",
-                            "Control de Dispositivo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // Eventos para Climas
+            chkControlClimaPrincipal.CheckedChanged += chkControlClima_CheckedChanged;
+            chkControlClimaRecamara1.CheckedChanged += chkControlClima_CheckedChanged;
+            chkControlClimaRecamara2.CheckedChanged += chkControlClima_CheckedChanged;
+            chkControlClimaSala.CheckedChanged += chkControlClima_CheckedChanged;
+            chkControlClimaCocina.CheckedChanged += chkControlClima_CheckedChanged;
         }
 
         private void chkControlLuz_CheckedChanged(object sender, EventArgs e)
@@ -82,15 +52,40 @@ namespace TurnOn
             ToggleDeviceState((CheckBox)sender, isLight: false);
         }
 
-        // --- MÉTODOS AUXILIARES (¡DEBES AÑADIR ESTOS PARA SOLUCIONAR LOS ERRORES CS0103!) ---
+        // --- LÓGICA DE DISPOSITIVOS ---
+        private void ToggleDeviceState(CheckBox controlCheckbox, bool isLight)
+        {
+            // Bloquea el control si el sistema está apagado
+            if (!rbOnOff.Checked)
+            {
+                controlCheckbox.Checked = false;
+                return;
+            }
 
-        // 1. Método para mapear el CheckBox de control al Button de estado
-        private Button GetDeviceButton(CheckBox controlCheckbox, bool isLight)
+            Button? deviceButton = GetDeviceButton(controlCheckbox, isLight);
+
+            if (deviceButton == null)
+            {
+                MessageBox.Show("Error de mapeo: CheckBox no corresponde a un botón de estado.", "Error Interno", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Lógica de color (Gris ↔ Verde)
+            bool newState = controlCheckbox.Checked;
+            Color newColor = newState ? Color.LightGreen : Color.Gray;
+
+            // Aplica el cambio de color
+            deviceButton.BackColor = newColor;
+        }
+
+        // --- MÉTODOS AUXILIARES CORREGIDOS ---
+
+        // 1. Mapeo de CheckBox a Button CORREGIDO
+        private Button? GetDeviceButton(CheckBox controlCheckbox, bool isLight)
         {
             string name = controlCheckbox.Name;
-            // IMPORTANTE: Asegúrate que los nombres de tus controles coincidan con esta lógica
-            // Por ejemplo, el CheckBox de control de luz de la Recamara Principal debe llamarse
-            // 'chkControlLuzPrincipal' y el botón de estado debe llamarse 'btnLuzPrincipal'.
+
+            // Mapeo corregido según los nombres reales
             if (name.Contains("Principal"))
                 return isLight ? btnLuzPrincipal : btnClimaPrincipal;
             if (name.Contains("Recamara1"))
@@ -101,33 +96,37 @@ namespace TurnOn
                 return isLight ? btnLuzSala : btnClimaSala;
             if (name.Contains("Cocina"))
                 return isLight ? btnLuzCocina : btnClimaCocina;
-            return null; // Retorna null si no encuentra un mapeo
+
+            return null;
         }
 
-        // 2. Método para actualizar los colores de los Paneles Indicadores
-        private void UpdateSystemStatus(bool isOn)
+        // 2. Actualización de Indicadores CORREGIDA
+        private void UpdateSystemStatus(bool isSystemActive)
         {
-            if (isOn)
+            Color neutralColor = Color.LightGray;
+            Color activeOnColor = Color.Green;
+            Color activeOffColor = Color.DarkGray;
+
+            if (isSystemActive)
             {
-                pnlEncendido.BackColor = Color.Green;
-                pnlApagado.BackColor = Color.Gray;
-                pnlFallo.BackColor = Color.Gray;
+                // Sistema ON
+                pnlEncendido.BackColor = activeOnColor;
+                pnlApagado.BackColor = neutralColor;
+                pnlFallo.BackColor = neutralColor;
             }
             else
             {
-                pnlEncendido.BackColor = Color.Gray;
-                pnlApagado.BackColor = Color.DarkGray;
-                pnlFallo.BackColor = Color.Gray;
+                // Sistema OFF
+                pnlEncendido.BackColor = neutralColor;
+                pnlApagado.BackColor = activeOffColor;
+                pnlFallo.BackColor = neutralColor;
             }
-            // Esto es opcional, ya que este método es llamado por rbOnOff_CheckedChanged.
-            // rbOnOff.Checked = isOn; 
         }
 
-        // 3. Método para resetear visualmente los botones de estado (CS0103)
+        // 3. Reset Visual de Botones
         private void ResetAllDevicesVisual(Color color)
         {
-            // Debes asegurarte que TODOS estos nombres de botones existan en tu Formulario.
-            Button[] deviceButtons = {
+            Button?[] deviceButtons = {
                 btnLuzPrincipal, btnClimaPrincipal,
                 btnLuzRecamara1, btnClimaRecamara1,
                 btnLuzRecamara2, btnClimaRecamara2,
@@ -135,22 +134,19 @@ namespace TurnOn
                 btnLuzCocina, btnClimaCocina
             };
 
-            foreach (Button btn in deviceButtons)
+            foreach (Button? btn in deviceButtons)
             {
-                // Maneja la posible referencia NULL por si algún botón no existe en el diseñador
                 if (btn != null)
                 {
                     btn.BackColor = color;
-                    btn.Text = "OFF";
                 }
             }
         }
 
-        // 4. Método para resetear los CheckBoxes de control (CS0103)
+        // 4. Reset de CheckBoxes de Control
         private void ResetAllDevicesControl(bool checkState)
         {
-            // Debes asegurarte que TODOS estos nombres de CheckBoxes existan en tu Formulario.
-            CheckBox[] controlCheckboxes = {
+            CheckBox?[] controlCheckboxes = {
                 chkControlLuzPrincipal, chkControlClimaPrincipal,
                 chkControlLuzRecamara1, chkControlClimaRecamara1,
                 chkControlLuzRecamara2, chkControlClimaRecamara2,
@@ -158,13 +154,33 @@ namespace TurnOn
                 chkControlLuzCocina, chkControlClimaCocina
             };
 
-            foreach (CheckBox chk in controlCheckboxes)
+            foreach (CheckBox? chk in controlCheckboxes)
             {
-                // Maneja la posible referencia NULL por si algún CheckBox no existe en el diseñador
                 if (chk != null)
                 {
                     chk.Checked = checkState;
                 }
+            }
+        }
+        private void rbOnOff_CheckedChanged_1(object sender, EventArgs e)
+        {
+            // Lógica simplificada - maneja directamente el estado actual
+            bool isSystemOn = rbOnOff.Checked;
+            HandleSystemToggle(isSystemOn);
+        }
+        private void HandleSystemToggle(bool isSystemOn)
+        {
+            if (isSystemOn)
+            {
+                // Sistema ON
+                UpdateSystemStatus(true);
+            }
+            else // Estado OFF
+            {
+                // Sistema OFF
+                UpdateSystemStatus(false);
+                ResetAllDevicesControl(false); // Desmarca todos los CheckBoxes
+                ResetAllDevicesVisual(Color.Gray); // Pone todos los botones de estado en Gris
             }
         }
     }
