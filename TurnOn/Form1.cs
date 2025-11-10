@@ -13,7 +13,6 @@ namespace TurnOn
 
         private void InicializarSistema()
         {
-            // 1. Inicializa botones de estado en Gris (OFF)
             ResetAllDevicesVisual(Color.Gray);
 
             // 2. Inicializa los indicadores y el RadioButton a OFF
@@ -22,7 +21,7 @@ namespace TurnOn
             // 3. Inicializa los CheckBoxes de control a desmarcados
             ResetAllDevicesControl(false);
 
-            // 4. Vincular eventos de CheckBox (IMPORTANTE)
+            // 4. Vincular eventos de CheckBox
             VincularEventosCheckBox();
         }
         private void VincularEventosCheckBox()
@@ -42,6 +41,7 @@ namespace TurnOn
             chkControlClimaCocina.CheckedChanged += chkControlClima_CheckedChanged;
         }
 
+        // --- EVENTOS DE CHECKBOX ---
         private void chkControlLuz_CheckedChanged(object sender, EventArgs e)
         {
             ToggleDeviceState((CheckBox)sender, isLight: true);
@@ -70,9 +70,11 @@ namespace TurnOn
                 return;
             }
 
-            // Lógica de color (Gris ↔ Verde)
+            // Lógica de color CORREGIDA:
+            // - CheckBox marcado: VERDE (encendido)
+            // - CheckBox desmarcado: ROJO (apagado) - solo si el sistema está activo
             bool newState = controlCheckbox.Checked;
-            Color newColor = newState ? Color.LightGreen : Color.Gray;
+            Color newColor = newState ? Color.LightGreen : Color.Red;
 
             // Aplica el cambio de color
             deviceButton.BackColor = newColor;
@@ -80,7 +82,7 @@ namespace TurnOn
 
         // --- MÉTODOS AUXILIARES CORREGIDOS ---
 
-        // 1. Mapeo de CheckBox a Button CORREGIDO
+        // 1. Mapeo de CheckBox a Button
         private Button? GetDeviceButton(CheckBox controlCheckbox, bool isLight)
         {
             string name = controlCheckbox.Name;
@@ -105,21 +107,27 @@ namespace TurnOn
         {
             Color neutralColor = Color.LightGray;
             Color activeOnColor = Color.Green;
-            Color activeOffColor = Color.DarkGray;
+            Color activeOffColor = Color.Red; // CORREGIDO: Apagado en ROJO
 
             if (isSystemActive)
             {
-                // Sistema ON
+                // Sistema ON - Indicador Encendido en Verde, Apagado en Rojo
                 pnlEncendido.BackColor = activeOnColor;
-                pnlApagado.BackColor = neutralColor;
+                pnlApagado.BackColor = activeOffColor; // ROJO cuando el sistema está activo
                 pnlFallo.BackColor = neutralColor;
+
+                // Cuando el sistema se activa, todos los botones pasan a ROJO (apagados)
+                ResetAllDevicesVisual(Color.Red);
             }
             else
             {
-                // Sistema OFF
+                // Sistema OFF - Todo en colores neutros/gris
                 pnlEncendido.BackColor = neutralColor;
-                pnlApagado.BackColor = activeOffColor;
+                pnlApagado.BackColor = neutralColor;
                 pnlFallo.BackColor = neutralColor;
+
+                // Cuando el sistema se desactiva, todos los botones pasan a GRIS
+                ResetAllDevicesVisual(Color.Gray);
             }
         }
 
@@ -164,7 +172,6 @@ namespace TurnOn
         }
         private void rbOnOff_CheckedChanged_1(object sender, EventArgs e)
         {
-            // Lógica simplificada - maneja directamente el estado actual
             bool isSystemOn = rbOnOff.Checked;
             HandleSystemToggle(isSystemOn);
         }
