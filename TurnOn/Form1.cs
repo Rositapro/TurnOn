@@ -187,6 +187,7 @@ namespace TurnOn
             bool isSystemOn = rbOnOff.Checked;
             HandleSystemToggle(isSystemOn);
         }
+
         private void HandleSystemToggle(bool isSystemOn)
         {
             if (isSystemOn)
