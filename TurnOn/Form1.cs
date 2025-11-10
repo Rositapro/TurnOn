@@ -21,7 +21,10 @@ namespace TurnOn
             // 3. Inicializa los CheckBoxes de control a desmarcados
             ResetAllDevicesControl(false);
 
-            // 4. Vincular eventos de CheckBox
+            // 4. Inicializa ProgressBar a 0%
+            progressBar1.Value = 0;
+
+            // 5. Vincular eventos de CheckBox
             VincularEventosCheckBox();
         }
         private void VincularEventosCheckBox()
@@ -72,9 +75,9 @@ namespace TurnOn
 
             // Lógica de color CORREGIDA:
             // - CheckBox marcado: VERDE (encendido)
-            // - CheckBox desmarcado: ROJO (apagado) - solo si el sistema está activo
+            // - CheckBox desmarcado: GRIS (apagado)
             bool newState = controlCheckbox.Checked;
-            Color newColor = newState ? Color.LightGreen : Color.Red;
+            Color newColor = newState ? Color.LightGreen : Color.Gray;
 
             // Aplica el cambio de color
             deviceButton.BackColor = newColor;
@@ -107,17 +110,21 @@ namespace TurnOn
         {
             Color neutralColor = Color.LightGray;
             Color activeOnColor = Color.Green;
-            Color activeOffColor = Color.Red; // CORREGIDO: Apagado en ROJO
+            Color activeOffColor = Color.Gray; // CORREGIDO: Apagado en GRIS
+            Color falloColor = Color.Red;      // CORREGIDO: Fallo en ROJO
 
             if (isSystemActive)
             {
-                // Sistema ON - Indicador Encendido en Verde, Apagado en Rojo
+                // Sistema ON 
                 pnlEncendido.BackColor = activeOnColor;
-                pnlApagado.BackColor = activeOffColor; // ROJO cuando el sistema está activo
-                pnlFallo.BackColor = neutralColor;
+                pnlApagado.BackColor = activeOffColor; // GRIS cuando el sistema está activo
+                pnlFallo.BackColor = falloColor;       // ROJO fijo para fallo
 
-                // Cuando el sistema se activa, todos los botones pasan a ROJO (apagados)
-                ResetAllDevicesVisual(Color.Red);
+                // ProgressBar al 100% cuando el sistema está encendido
+                progressBar1.Value = 100;
+
+                // Cuando el sistema se activa, todos los botones permanecen en GRIS
+                // (se cambiarán a VERDE solo cuando se activen con los CheckBox)
             }
             else
             {
@@ -125,6 +132,9 @@ namespace TurnOn
                 pnlEncendido.BackColor = neutralColor;
                 pnlApagado.BackColor = neutralColor;
                 pnlFallo.BackColor = neutralColor;
+
+                // ProgressBar a 0% cuando el sistema está apagado
+                progressBar1.Value = 0;
 
                 // Cuando el sistema se desactiva, todos los botones pasan a GRIS
                 ResetAllDevicesVisual(Color.Gray);
@@ -170,6 +180,8 @@ namespace TurnOn
                 }
             }
         }
+
+
         private void rbOnOff_CheckedChanged_1(object sender, EventArgs e)
         {
             bool isSystemOn = rbOnOff.Checked;
